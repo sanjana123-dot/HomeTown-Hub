@@ -205,12 +205,13 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-light dark:bg-black dark:text-white transition-colors">
-      <Navbar />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-6">
-          <div className="max-w-7xl mx-auto">
+    <>
+      <div className="min-h-screen bg-light dark:bg-black dark:text-white transition-colors">
+        <Navbar />
+        <div className="flex">
+          <Sidebar />
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-3xl font-bold text-dark dark:text-white">Platform Admin Dashboard</h1>
               <button
@@ -758,8 +759,8 @@ const AdminDashboard = () => {
                 </div>
               </div>
             )}
-          </div>
-        </main>
+            </div>
+          </main>
         </div>
       </div>
 
@@ -774,7 +775,8 @@ const AdminDashboard = () => {
         loading={deleteLoading}
         confirmClassName="bg-red-500 hover:bg-red-600"
       />
-    )
+    </>
+  )
   }
 
 export default AdminDashboard
