@@ -758,7 +758,6 @@ const AdminDashboard = () => {
                 </div>
               </div>
             )}
-          </div>
           </main>
         </div>
       </div>
