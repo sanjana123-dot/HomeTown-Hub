@@ -41,18 +41,32 @@ app.use(cors({
     console.log('CORS check - Origin:', origin)
     console.log('CORS check - Allowed origins:', allowedOrigins)
     
+    // Check if origin is in allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log('CORS: Origin allowed')
-      callback(null, true)
-    } else if (process.env.NODE_ENV === 'development') {
-      console.log('CORS: Development mode - allowing all')
-      callback(null, true)
-    } else {
-      console.log('CORS: Origin NOT allowed:', origin)
-      callback(new Error('Not allowed by CORS'))
+      console.log('CORS: Origin allowed (exact match)')
+      return callback(null, true)
     }
+    
+    // Allow Vercel preview deployments (any subdomain of vercel.app)
+    if (origin.includes('.vercel.app')) {
+      console.log('CORS: Origin allowed (Vercel deployment)')
+      return callback(null, true)
+    }
+    
+    // Development mode - allow all
+    if (process.env.NODE_ENV === 'development') {
+      console.log('CORS: Development mode - allowing all')
+      return callback(null, true)
+    }
+    
+    // Production mode - strict check
+    console.log('CORS: Origin NOT allowed:', origin)
+    callback(new Error('Not allowed by CORS'))
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
