@@ -1,0 +1,10 @@
+{"location":"authController.js:login:entry","message":"Login request received","data":{"hasEmailOrUsername":true,"hasPassword":true},"timestamp":1770958499891,"hypothesisId":"H1"}
+{"location":"authController.js:login:afterFindOne","message":"User lookup result","data":{"userFound":true},"timestamp":1770958500788,"hypothesisId":"H2"}
+{"location":"authController.js:login:entry","message":"Login request received","data":{"hasEmailOrUsername":true,"hasPassword":true},"timestamp":1770958543991,"hypothesisId":"H1"}
+{"location":"authController.js:login:afterFindOne","message":"User lookup result","data":{"userFound":false},"timestamp":1770958544182,"hypothesisId":"H2"}
+{"location":"authController.js:login:entry","message":"Login request received","data":{"hasEmailOrUsername":true,"hasPassword":true},"timestamp":1770958548790,"hypothesisId":"H1"}
+{"location":"authController.js:login:afterFindOne","message":"User lookup result","data":{"userFound":true},"timestamp":1770958549022,"hypothesisId":"H2"}
+{"location":"authController.js:login:entry","message":"Login request received","data":{"hasEmailOrUsername":true,"hasPassword":true},"timestamp":1770958572044,"hypothesisId":"H1"}
+{"location":"authController.js:login:afterFindOne","message":"User lookup result","data":{"userFound":true},"timestamp":1770958572462,"hypothesisId":"H2"}
+{"location":"authController.js:login:entry","message":"Login request received","data":{"hasEmailOrUsername":true,"hasPassword":true},"timestamp":1770961241551,"hypothesisId":"H1"}
+{"location":"authController.js:login:afterFindOne","message":"User lookup result","data":{"userFound":true},"timestamp":1770961241902,"hypothesisId":"H2"}

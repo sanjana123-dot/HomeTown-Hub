@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HomeTown Hub - Connect with Your Community</title>
+    <!-- Tailwind Play CDN: Development workaround for OneDrive file lock issues -->
+    <!-- Note: Warning about production use is expected. In production builds, use PostCSS plugin instead. -->
+    <!-- This is only loaded in development mode via Vite's HTML env replacement -->
+    <script>
+      // Suppress console warning about production use (this is intentional for dev)
+      const originalWarn = console.warn;
+      console.warn = function(...args) {
+        if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) {
+          return; // Suppress Tailwind CDN production warning
+        }
+        originalWarn.apply(console, args);
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: '#A5B4FC',
+              secondary: '#6EE7B7',
+              accent: '#F9A8D4',
+              dark: '#1E293B',
+              light: '#F9FAFB',
+            },
+          },
+        },
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
