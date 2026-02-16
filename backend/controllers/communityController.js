@@ -339,7 +339,7 @@ export const removeMember = async (req, res) => {
 export const updateCommunitySettings = async (req, res) => {
   try {
     const { id } = req.params
-    const { rules, requiresApproval } = req.body
+    const { name, rules, requiresApproval } = req.body
 
     const community = await Community.findById(id)
 
@@ -349,6 +349,19 @@ export const updateCommunitySettings = async (req, res) => {
 
     if (!ensureCommunityAdmin(community, req.user)) {
       return res.status(403).json({ message: 'Not authorized to update settings' })
+    }
+
+    // Allow community admins to edit the name
+    if (name && typeof name === 'string' && name.trim()) {
+      // Check if name already exists (excluding current community)
+      const existingCommunity = await Community.findOne({
+        name: name.trim(),
+        _id: { $ne: id }
+      })
+      if (existingCommunity) {
+        return res.status(400).json({ message: 'A community with this name already exists' })
+      }
+      community.name = name.trim()
     }
 
     if (typeof rules === 'string') {

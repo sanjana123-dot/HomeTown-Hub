@@ -53,6 +53,34 @@ export const getPendingCommunities = async (req, res) => {
   }
 }
 
+// Get all communities (for platform admin management)
+export const getAllCommunities = async (req, res) => {
+  try {
+    const { status, search } = req.query
+    const filter = {}
+    
+    if (status) {
+      filter.status = status
+    }
+    
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ]
+    }
+
+    const communities = await Community.find(filter)
+      .populate('creator', 'name email')
+      .sort({ createdAt: -1 })
+      .lean()
+
+    res.json(communities)
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
 export const approveCommunity = async (req, res) => {
   try {
     const community = await Community.findById(req.params.id)
@@ -334,5 +362,55 @@ export const revokeModerator = async (req, res) => {
     res.json({ message: 'Moderator role revoked successfully' })
   } catch (error) {
     res.status(500).json({ message: error.message })
+  }
+}
+
+// Delete community (platform admin only) - with cascading deletes
+export const deleteCommunity = async (req, res) => {
+  try {
+    const { communityId } = req.params
+
+    const community = await Community.findById(communityId)
+    if (!community) {
+      return res.status(404).json({ message: 'Community not found' })
+    }
+
+    // Import models needed for cascading deletes
+    const Post = (await import('../models/Post.js')).default
+    const Comment = (await import('../models/Comment.js')).default
+    const Event = (await import('../models/Event.js')).default
+    const Message = (await import('../models/Message.js')).default
+    const Notification = (await import('../models/Notification.js')).default
+    const Announcement = (await import('../models/Announcement.js')).default
+
+    // 1. Delete all posts in this community and their comments
+    const posts = await Post.find({ community: communityId })
+    const postIds = posts.map(post => post._id)
+    
+    // Delete all comments on posts in this community
+    await Comment.deleteMany({ post: { $in: postIds } })
+    
+    // Delete all posts in this community
+    await Post.deleteMany({ community: communityId })
+
+    // 2. Delete all events in this community
+    await Event.deleteMany({ community: communityId })
+
+    // 3. Delete all messages related to this community
+    await Message.deleteMany({ community: communityId })
+
+    // 4. Delete all notifications related to this community
+    await Notification.deleteMany({ relatedCommunityId: communityId })
+
+    // 5. Delete all announcements in this community
+    await Announcement.deleteMany({ community: communityId })
+
+    // 6. Finally, delete the community itself
+    await Community.deleteOne({ _id: communityId })
+
+    res.json({ message: 'Community deleted successfully. All associated data has been removed.' })
+  } catch (error) {
+    console.error('Error deleting community:', error)
+    res.status(500).json({ message: error.message || 'Failed to delete community' })
   }
 }

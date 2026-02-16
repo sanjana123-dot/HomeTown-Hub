@@ -28,6 +28,8 @@ const CommunityAdminDashboard = () => {
   const [loading, setLoading] = useState(true)
   const [editingRulesId, setEditingRulesId] = useState(null)
   const [rulesDraft, setRulesDraft] = useState('')
+  const [editingNameId, setEditingNameId] = useState(null)
+  const [nameDraft, setNameDraft] = useState('')
   const [memberToRemove, setMemberToRemove] = useState(null) // { communityId, userId }
   const [removeLoading, setRemoveLoading] = useState(false)
 
@@ -114,6 +116,31 @@ const CommunityAdminDashboard = () => {
     }
   }
 
+  const startEditingName = (community) => {
+    setEditingNameId(community._id)
+    setNameDraft(community.name)
+  }
+
+  const cancelEditingName = () => {
+    setEditingNameId(null)
+    setNameDraft('')
+  }
+
+  const saveName = async (communityId) => {
+    if (!nameDraft.trim()) {
+      alert('Community name cannot be empty')
+      return
+    }
+    try {
+      await api.patch(`/communities/${communityId}/settings`, { name: nameDraft.trim() })
+      setEditingNameId(null)
+      setNameDraft('')
+      fetchAdminCommunities()
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update community name')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-light dark:bg-black dark:text-white transition-colors">
@@ -172,9 +199,42 @@ const CommunityAdminDashboard = () => {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h2 className="text-2xl font-bold text-dark dark:text-white">
-                            {community.name}
-                          </h2>
+                          {editingNameId === community._id ? (
+                            <div className="flex items-center space-x-2 flex-1">
+                              <input
+                                type="text"
+                                value={nameDraft}
+                                onChange={(e) => setNameDraft(e.target.value)}
+                                className="text-2xl font-bold px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+                                placeholder="Community name"
+                              />
+                              <button
+                                onClick={() => saveName(community._id)}
+                                className="btn-primary text-sm"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={cancelEditingName}
+                                className="btn-secondary text-sm"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <h2 className="text-2xl font-bold text-dark dark:text-white">
+                                {community.name}
+                              </h2>
+                              <button
+                                onClick={() => startEditingName(community)}
+                                className="p-1 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary"
+                                title="Edit community name"
+                              >
+                                <FiEdit />
+                              </button>
+                            </>
+                          )}
                           <span
                             className={`text-xs px-2 py-1 rounded ${
                               community.adminRole === 'creator'

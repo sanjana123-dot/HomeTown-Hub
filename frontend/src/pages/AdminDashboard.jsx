@@ -15,8 +15,10 @@ import {
   FiUnlock,
   FiAlertCircle,
   FiTrendingUp,
+  FiTrash2,
 } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
+import ConfirmDialog from '../components/ConfirmDialog'
 import api from '../services/api'
 
 const AdminDashboard = () => {
@@ -34,6 +36,7 @@ const AdminDashboard = () => {
     recentUsers: 0,
   })
   const [pendingCommunities, setPendingCommunities] = useState([])
+  const [allCommunities, setAllCommunities] = useState([])
   const [admins, setAdmins] = useState([])
   const [users, setUsers] = useState([])
   const [usersPage, setUsersPage] = useState(1)
@@ -50,6 +53,8 @@ const AdminDashboard = () => {
   })
   const [adminPassword, setAdminPassword] = useState('')
   const [loading, setLoading] = useState(true)
+  const [communityToDelete, setCommunityToDelete] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   useEffect(() => {
     fetchAdminData()
@@ -63,13 +68,15 @@ const AdminDashboard = () => {
 
   const fetchAdminData = async () => {
     try {
-      const [statsRes, communitiesRes, adminsRes] = await Promise.all([
+      const [statsRes, communitiesRes, allCommunitiesRes, adminsRes] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/admin/communities/pending'),
+        api.get('/admin/communities/all'),
         api.get('/admin/admins'),
       ])
       setStats(statsRes.data)
       setPendingCommunities(communitiesRes.data)
+      setAllCommunities(allCommunitiesRes.data)
       setAdmins(adminsRes.data)
     } catch (error) {
       console.error('Error fetching admin data:', error)
@@ -124,6 +131,25 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error rejecting community:', error)
       alert(error.response?.data?.message || 'Failed to reject community')
+    }
+  }
+
+  const handleDeleteCommunityClick = (communityId) => {
+    setCommunityToDelete(communityId)
+  }
+
+  const handleDeleteCommunityConfirm = async () => {
+    if (!communityToDelete) return
+    setDeleteLoading(true)
+    try {
+      await api.delete(`/admin/communities/${communityToDelete}`)
+      setCommunityToDelete(null)
+      fetchAdminData()
+      alert('Community deleted successfully')
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete community')
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -463,58 +489,124 @@ const AdminDashboard = () => {
 
             {/* Community Approvals Tab */}
             {activeTab === 'communities' && (
-              <div className="card dark:bg-gray-900 dark:border-gray-800">
-                <h2 className="text-2xl font-semibold mb-4 text-dark dark:text-white">
-                  Pending Community Approvals
-                </h2>
-                {pendingCommunities.length === 0 ? (
-                  <p className="text-gray-500 dark:text-gray-300">No pending approvals.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {pendingCommunities.map((community) => (
-                      <div
-                        key={community._id}
-                        className="border rounded-lg p-4 dark:border-gray-800 dark:bg-gray-800/50"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="text-xl font-semibold text-dark dark:text-white mb-2">
-                              {community.name}
-                            </h3>
-                            <p className="text-gray-600 dark:text-gray-300 mb-2">{community.description}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-300">
-                              {community.city}, {community.state}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-300">
-                              Created by: {community.creator?.name} ({community.creator?.email})
-                            </p>
-                            {community.rules && (
-                              <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm">
-                                <strong>Rules:</strong> {community.rules}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex space-x-2 ml-4">
-                            <button
-                              onClick={() => handleApproveCommunity(community._id)}
-                              className="btn-secondary flex items-center space-x-2"
-                            >
-                              <FiCheckCircle />
-                              <span>Approve</span>
-                            </button>
-                            <button
-                              onClick={() => handleRejectCommunity(community._id)}
-                              className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center space-x-2"
-                            >
-                              <FiXCircle />
-                              <span>Reject</span>
-                            </button>
+              <div className="space-y-6">
+                {/* Pending Communities */}
+                <div className="card dark:bg-gray-900 dark:border-gray-800">
+                  <h2 className="text-2xl font-semibold mb-4 text-dark dark:text-white">
+                    Pending Community Approvals
+                  </h2>
+                  {pendingCommunities.length === 0 ? (
+                    <p className="text-gray-500 dark:text-gray-300">No pending approvals.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {pendingCommunities.map((community) => (
+                        <div
+                          key={community._id}
+                          className="border rounded-lg p-4 dark:border-gray-800 dark:bg-gray-800/50"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="text-xl font-semibold text-dark dark:text-white mb-2">
+                                {community.name}
+                              </h3>
+                              <p className="text-gray-600 dark:text-gray-300 mb-2">{community.description}</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-300">
+                                {community.city}, {community.state}
+                              </p>
+                              <p className="text-sm text-gray-500 dark:text-gray-300">
+                                Created by: {community.creator?.name} ({community.creator?.email})
+                              </p>
+                              {community.rules && (
+                                <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm">
+                                  <strong>Rules:</strong> {community.rules}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex space-x-2 ml-4">
+                              <button
+                                onClick={() => handleApproveCommunity(community._id)}
+                                className="btn-secondary flex items-center space-x-2"
+                              >
+                                <FiCheckCircle />
+                                <span>Approve</span>
+                              </button>
+                              <button
+                                onClick={() => handleRejectCommunity(community._id)}
+                                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center space-x-2"
+                              >
+                                <FiXCircle />
+                                <span>Reject</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* All Communities (with delete option) */}
+                <div className="card dark:bg-gray-900 dark:border-gray-800">
+                  <h2 className="text-2xl font-semibold mb-4 text-dark dark:text-white">
+                    All Communities
+                  </h2>
+                  {allCommunities.length === 0 ? (
+                    <p className="text-gray-500 dark:text-gray-300">No communities found.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {allCommunities.map((community) => (
+                        <div
+                          key={community._id}
+                          className="border rounded-lg p-4 dark:border-gray-800 dark:bg-gray-800/50"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <h3 className="text-xl font-semibold text-dark dark:text-white">
+                                  {community.name}
+                                </h3>
+                                <span
+                                  className={`text-xs px-2 py-1 rounded ${
+                                    community.status === 'approved'
+                                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                                      : community.status === 'pending'
+                                      ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                                      : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                                  }`}
+                                >
+                                  {community.status}
+                                </span>
+                              </div>
+                              <p className="text-gray-600 dark:text-gray-300 mb-2">{community.description}</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-300">
+                                {community.city}, {community.state} • {community.memberCount || 0} Members
+                              </p>
+                              <p className="text-sm text-gray-500 dark:text-gray-300">
+                                Created by: {community.creator?.name} ({community.creator?.email})
+                              </p>
+                            </div>
+                            <div className="flex space-x-2 ml-4">
+                              <button
+                                onClick={() => navigate(`/community/${community._id}`)}
+                                className="btn-secondary text-sm"
+                              >
+                                View
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCommunityClick(community._id)}
+                                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center space-x-2 text-sm"
+                                title="Delete community"
+                              >
+                                <FiTrash2 />
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -667,10 +759,22 @@ const AdminDashboard = () => {
               </div>
             )}
           </div>
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
-  )
-}
+
+      <ConfirmDialog
+        isOpen={!!communityToDelete}
+        onClose={() => setCommunityToDelete(null)}
+        onConfirm={handleDeleteCommunityConfirm}
+        title="Delete Community"
+        message="Are you sure you want to delete this community? This will permanently delete all posts, events, messages, and other data associated with this community. This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={deleteLoading}
+        confirmClassName="bg-red-500 hover:bg-red-600"
+      />
+    )
+  }
 
 export default AdminDashboard
