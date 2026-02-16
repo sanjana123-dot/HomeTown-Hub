@@ -21,43 +21,45 @@ const Dashboard = () => {
   const [events, setEvents] = useState([])
   const [pendingCount, setPendingCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const abortControllerRef = useState(null)
+
+  const fetchDashboardData = async (signal = null) => {
+    try {
+      setLoading(true)
+      const requests = [
+        api.get('/posts/feed', signal ? { signal } : {}),
+        api.get('/communities/my', signal ? { signal } : {}),
+        api.get('/events/upcoming', signal ? { signal } : {}),
+      ]
+      
+      // If user is admin, also fetch pending communities count
+      if (user?.role === 'admin') {
+        requests.push(api.get('/admin/stats', signal ? { signal } : {}))
+      }
+      
+      const results = await Promise.all(requests)
+      setPosts(results[0].data)
+      setCommunities(results[1].data)
+      setEvents(results[2].data)
+      
+      if (user?.role === 'admin' && results[3]) {
+        setPendingCount(results[3].data.pendingCommunities || 0)
+      }
+    } catch (error) {
+      // Don't log error if request was cancelled
+      if (error.name !== 'CanceledError' && error.name !== 'AbortError' && error.code !== 'ERR_CANCELED') {
+        console.error('Error fetching dashboard data:', error)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     const abortController = new AbortController()
+    abortControllerRef.current = abortController
     
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true)
-        const requests = [
-          api.get('/posts/feed', { signal: abortController.signal }),
-          api.get('/communities/my', { signal: abortController.signal }),
-          api.get('/events/upcoming', { signal: abortController.signal }),
-        ]
-        
-        // If user is admin, also fetch pending communities count
-        if (user?.role === 'admin') {
-          requests.push(api.get('/admin/stats', { signal: abortController.signal }))
-        }
-        
-        const results = await Promise.all(requests)
-        setPosts(results[0].data)
-        setCommunities(results[1].data)
-        setEvents(results[2].data)
-        
-        if (user?.role === 'admin' && results[3]) {
-          setPendingCount(results[3].data.pendingCommunities || 0)
-        }
-      } catch (error) {
-        // Don't log error if request was cancelled
-        if (error.name !== 'CanceledError' && error.name !== 'AbortError') {
-          console.error('Error fetching dashboard data:', error)
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    fetchDashboardData()
+    fetchDashboardData(abortController.signal)
     
     // Cleanup: cancel request if component unmounts or navigates away
     return () => {
