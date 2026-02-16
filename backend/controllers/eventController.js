@@ -87,7 +87,7 @@ export const getUpcomingEvents = async (req, res) => {
         { members: req.user._id, status: 'approved' },
         { creator: req.user._id }
       ]
-    }).select('_id')
+    }).select('_id').lean()
 
     const communityIds = userCommunities.map((c) => c._id)
 
@@ -101,11 +101,13 @@ export const getUpcomingEvents = async (req, res) => {
       community: { $in: communityIds },
       date: { $gte: today },
     })
-      .populate('creator', 'name')
+      .populate('creator', 'name username')
       .populate('community', 'name')
-      .populate('attendees', 'name')
+      .populate('attendees', 'name username')
+      .select('title description date time location community creator attendees createdAt')
       .sort({ date: 1 })
       .limit(10)
+      .lean() // Use lean() for faster queries
 
     res.json(events)
   } catch (error) {
@@ -121,17 +123,19 @@ export const getAllEvents = async (req, res) => {
         { members: req.user._id, status: 'approved' },
         { creator: req.user._id }
       ]
-    }).select('_id')
+    }).select('_id').lean()
 
     const communityIds = userCommunities.map((c) => c._id)
 
     const events = await Event.find({
       community: { $in: communityIds },
     })
-      .populate('creator', 'name')
+      .populate('creator', 'name username')
       .populate('community', 'name')
-      .populate('attendees', 'name')
+      .populate('attendees', 'name username')
+      .select('title description date time location community creator attendees createdAt')
       .sort({ date: 1 })
+      .lean() // Use lean() for faster queries
 
     res.json(events)
   } catch (error) {

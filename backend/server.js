@@ -1,6 +1,7 @@
 import express from 'express'
 import dotenv from 'dotenv'
 import cors from 'cors'
+import compression from 'compression'
 import connectDB from './config/database.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
@@ -19,6 +20,9 @@ dotenv.config()
 
 const app = express()
 
+// Enable compression for all responses (reduces response size significantly)
+app.use(compression())
+
 // CORS configuration - allow frontend URLs
 const allowedOrigins = [
   'http://localhost:3000',
@@ -26,41 +30,38 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
 ].filter(Boolean) // Remove undefined values
 
-// Log allowed origins for debugging (remove in production if needed)
-console.log('Allowed CORS origins:', allowedOrigins)
-console.log('FRONTEND_URL:', process.env.FRONTEND_URL)
+// Log allowed origins for debugging (only in development)
+if (process.env.NODE_ENV === 'development') {
+  console.log('Allowed CORS origins:', allowedOrigins)
+  console.log('FRONTEND_URL:', process.env.FRONTEND_URL)
+}
 
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) {
-      console.log('Request with no origin - allowing')
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Request with no origin - allowing')
+      }
       return callback(null, true)
     }
     
-    console.log('CORS check - Origin:', origin)
-    console.log('CORS check - Allowed origins:', allowedOrigins)
-    
     // Check if origin is in allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log('CORS: Origin allowed (exact match)')
       return callback(null, true)
     }
     
     // Allow Vercel preview deployments (any subdomain of vercel.app)
     if (origin.includes('.vercel.app')) {
-      console.log('CORS: Origin allowed (Vercel deployment)')
       return callback(null, true)
     }
     
     // Development mode - allow all
     if (process.env.NODE_ENV === 'development') {
-      console.log('CORS: Development mode - allowing all')
       return callback(null, true)
     }
     
     // Production mode - strict check
-    console.log('CORS: Origin NOT allowed:', origin)
     callback(new Error('Not allowed by CORS'))
   },
   credentials: true,
@@ -71,9 +72,20 @@ app.use(cors({
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-// Log all incoming requests for debugging
+// Log all incoming requests for debugging (only in development)
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`)
+    next()
+  })
+}
+
+// Add caching headers for static assets
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`)
+  // Cache static files for 1 year
+  if (req.path.startsWith('/uploads/')) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+  }
   next()
 })
 
@@ -84,12 +96,12 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
-// API Routes - Add logging to verify routes are registered
+// API Routes
 try {
-  console.log('Registering API routes...')
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Registering API routes...')
+  }
   app.use('/api/auth', authRoutes)
-  console.log('✓ Auth routes registered at /api/auth')
-  
   app.use('/api/communities', communityRoutes)
   app.use('/api/posts', postRoutes)
   app.use('/api/events', eventRoutes)
@@ -99,13 +111,9 @@ try {
   app.use('/api/messages', messageRoutes)
   app.use('/api/announcements', announcementRoutes)
   
-  console.log('✓ All API routes registered successfully')
-  console.log('Available auth routes:')
-  console.log('  - POST /api/auth/login')
-  console.log('  - POST /api/auth/register')
-  console.log('  - GET /api/auth/me')
-  console.log('  - POST /api/auth/forgot-password')
-  console.log('  - POST /api/auth/reset-password')
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✓ All API routes registered successfully')
+  }
 } catch (error) {
   console.error('❌ Error registering routes:', error)
   throw error
@@ -128,10 +136,11 @@ app.get('/api/test', (req, res) => {
   })
 })
 
-// 404 handler - log the request for debugging
+// 404 handler
 app.use((req, res) => {
-  console.log('404 - Route not found:', req.method, req.originalUrl)
-  console.log('Available routes include: /api/auth/login, /api/auth/register, /api/health')
+  if (process.env.NODE_ENV === 'development') {
+    console.log('404 - Route not found:', req.method, req.originalUrl)
+  }
   res.status(404).json({ message: 'Route not found', path: req.originalUrl, method: req.method })
 })
 
@@ -145,10 +154,12 @@ function startServer(port) {
   return new Promise((resolve, reject) => {
     const server = app.listen(port, () => {
       console.log(`🚀 Server running on port ${port}`)
-      console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`)
-      console.log(`🌐 CORS allowed origins: ${allowedOrigins.join(', ')}`)
-      console.log(`✅ Server ready to accept requests`)
-      console.log(`🔗 Test endpoint: http://localhost:${port}/api/health`)
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`)
+        console.log(`🌐 CORS allowed origins: ${allowedOrigins.join(', ')}`)
+        console.log(`✅ Server ready to accept requests`)
+        console.log(`🔗 Test endpoint: http://localhost:${port}/api/health`)
+      }
       if (port !== PORT) {
         console.log(`(Port ${PORT} was in use. If using frontend proxy, set target to http://localhost:${port} in vite.config.js)`)
       }

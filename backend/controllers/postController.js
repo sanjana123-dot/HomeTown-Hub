@@ -133,17 +133,21 @@ export const getFeed = async (req, res) => {
     const communityIds = userCommunities.map((c) => c._id)
 
     const posts = await Post.find({ community: { $in: communityIds } })
-      .populate('author', 'name')
+      .populate('author', 'name username')
       .populate('community', 'name')
       .populate({
         path: 'comments',
+        select: 'content author createdAt',
         populate: {
           path: 'author',
           select: 'name'
-        }
+        },
+        options: { limit: 5 } // Limit comments to reduce payload
       })
+      .select('content author community image video files likes comments isPinned createdAt')
       .sort({ isPinned: -1, createdAt: -1 })
       .limit(50)
+      .lean() // Use lean() for faster queries (returns plain JS objects)
 
     res.json(posts)
   } catch (error) {
