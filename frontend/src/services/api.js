@@ -1,7 +1,18 @@
 import axios from 'axios'
 
 // Use environment variable for production, fallback to '/api' for development
-const apiBaseURL = import.meta.env.VITE_API_URL || '/api'
+// If VITE_API_URL is set, ensure it ends with /api (or add it)
+let apiBaseURL = import.meta.env.VITE_API_URL || '/api'
+
+// If VITE_API_URL is provided (production), ensure it ends with /api
+if (import.meta.env.VITE_API_URL) {
+  // Remove trailing slash if present
+  apiBaseURL = import.meta.env.VITE_API_URL.replace(/\/$/, '')
+  // Add /api if not already present
+  if (!apiBaseURL.endsWith('/api')) {
+    apiBaseURL = apiBaseURL + '/api'
+  }
+}
 
 const api = axios.create({
   baseURL: apiBaseURL,
