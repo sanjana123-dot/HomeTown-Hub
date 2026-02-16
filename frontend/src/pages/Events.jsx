@@ -15,19 +15,32 @@ const Events = () => {
   const [filter, setFilter] = useState('all') // all, upcoming, past
 
   useEffect(() => {
-    fetchEvents()
-  }, [])
-
-  const fetchEvents = async () => {
-    try {
-      const response = await api.get('/events/all')
-      setEvents(response.data)
-    } catch (error) {
-      console.error('Error fetching events:', error)
-    } finally {
-      setLoading(false)
+    const abortController = new AbortController()
+    
+    const fetchEvents = async () => {
+      try {
+        setLoading(true)
+        const response = await api.get('/events/all', {
+          signal: abortController.signal
+        })
+        setEvents(response.data)
+      } catch (error) {
+        // Don't log error if request was cancelled
+        if (error.name !== 'CanceledError' && error.name !== 'AbortError') {
+          console.error('Error fetching events:', error)
+        }
+      } finally {
+        setLoading(false)
+      }
     }
-  }
+    
+    fetchEvents()
+    
+    // Cleanup: cancel request if component unmounts or dependencies change
+    return () => {
+      abortController.abort()
+    }
+  }, [])
 
   const filteredEvents = events.filter((event) => {
     const matchesSearch =

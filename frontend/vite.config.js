@@ -16,4 +16,25 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // Optimize build for production
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor libraries into separate chunks
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['react-icons/fi'],
+          'utils-vendor': ['axios', 'date-fns'],
+        },
+      },
+    },
+    // Enable minification (esbuild is faster than terser)
+    minify: 'esbuild',
+    // Chunk size warning limit
+    chunkSizeWarningLimit: 1000,
+  },
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom'],
+  },
 })

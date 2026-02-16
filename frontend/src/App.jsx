@@ -1,34 +1,36 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
-import Community from './pages/Community'
-import CreateCommunity from './pages/CreateCommunity'
-import MyCommunities from './pages/MyCommunities'
-import DiscoverCommunities from './pages/DiscoverCommunities'
-import Events from './pages/Events'
-import Profile from './pages/Profile'
-import EventDetails from './pages/EventDetails'
-import AdminDashboard from './pages/AdminDashboard'
-import CommunityAdminDashboard from './pages/CommunityAdminDashboard'
-import SuggestedCommunities from './pages/SuggestedCommunities'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-import Inbox from './pages/Inbox'
-import Chat from './pages/Chat'
+import LoadingSpinner from './components/LoadingSpinner'
 import PrivateRoute from './components/PrivateRoute'
 import AdminRoute from './components/AdminRoute'
 
+// Lazy load pages for code splitting and faster initial load
+const Home = lazy(() => import('./pages/Home'))
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Community = lazy(() => import('./pages/Community'))
+const CreateCommunity = lazy(() => import('./pages/CreateCommunity'))
+const MyCommunities = lazy(() => import('./pages/MyCommunities'))
+const DiscoverCommunities = lazy(() => import('./pages/DiscoverCommunities'))
+const Events = lazy(() => import('./pages/Events'))
+const Profile = lazy(() => import('./pages/Profile'))
+const EventDetails = lazy(() => import('./pages/EventDetails'))
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+const CommunityAdminDashboard = lazy(() => import('./pages/CommunityAdminDashboard'))
+const SuggestedCommunities = lazy(() => import('./pages/SuggestedCommunities'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const Inbox = lazy(() => import('./pages/Inbox'))
+const Chat = lazy(() => import('./pages/Chat'))
+
 function App() {
-  // Minimal fallback UI to verify React is rendering
-  // If you still see a completely blank page after this change,
-  // the problem is outside the router/components.
   return (
     <AuthProvider>
       <Router>
-        <Routes>
+        <Suspense fallback={<LoadingSpinner />}>
+          <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -146,7 +148,8 @@ function App() {
               </PrivateRoute>
             }
           />
-        </Routes>
+          </Routes>
+        </Suspense>
       </Router>
     </AuthProvider>
   )

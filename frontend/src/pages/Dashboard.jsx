@@ -23,36 +23,47 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchDashboardData()
-  }, [location.pathname]) // Refresh when navigating to dashboard
-
-  const fetchDashboardData = async () => {
-    try {
-      const requests = [
-        api.get('/posts/feed'),
-        api.get('/communities/my'),
-        api.get('/events/upcoming'),
-      ]
-      
-      // If user is admin, also fetch pending communities count
-      if (user?.role === 'admin') {
-        requests.push(api.get('/admin/stats'))
+    const abortController = new AbortController()
+    
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true)
+        const requests = [
+          api.get('/posts/feed', { signal: abortController.signal }),
+          api.get('/communities/my', { signal: abortController.signal }),
+          api.get('/events/upcoming', { signal: abortController.signal }),
+        ]
+        
+        // If user is admin, also fetch pending communities count
+        if (user?.role === 'admin') {
+          requests.push(api.get('/admin/stats', { signal: abortController.signal }))
+        }
+        
+        const results = await Promise.all(requests)
+        setPosts(results[0].data)
+        setCommunities(results[1].data)
+        setEvents(results[2].data)
+        
+        if (user?.role === 'admin' && results[3]) {
+          setPendingCount(results[3].data.pendingCommunities || 0)
+        }
+      } catch (error) {
+        // Don't log error if request was cancelled
+        if (error.name !== 'CanceledError' && error.name !== 'AbortError') {
+          console.error('Error fetching dashboard data:', error)
+        }
+      } finally {
+        setLoading(false)
       }
-      
-      const results = await Promise.all(requests)
-      setPosts(results[0].data)
-      setCommunities(results[1].data)
-      setEvents(results[2].data)
-      
-      if (user?.role === 'admin' && results[3]) {
-        setPendingCount(results[3].data.pendingCommunities || 0)
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error)
-    } finally {
-      setLoading(false)
     }
-  }
+    
+    fetchDashboardData()
+    
+    // Cleanup: cancel request if component unmounts or navigates away
+    return () => {
+      abortController.abort()
+    }
+  }, [location.pathname, user?.role]) // Refresh when navigating to dashboard
 
   if (loading) {
     return (
