@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import { formatDistanceToNow } from 'date-fns'
 import LoadingSpinner from './LoadingSpinner'
+import { getImageUrl } from '../utils/imageUrl'
 
 const emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾']
 
@@ -231,14 +232,14 @@ export default function ChatPanel({ communityId, receiverId, receiver: receiverP
                             </p>
                             {message.sharedPost.image && (
                               <img
-                                src={message.sharedPost.image.startsWith('http') ? message.sharedPost.image : message.sharedPost.image}
+                                src={getImageUrl(message.sharedPost.image) || message.sharedPost.image}
                                 alt="Post"
                                 className="mt-2 w-full max-h-32 object-cover rounded-lg"
                               />
                             )}
                             {message.sharedPost.video && !message.sharedPost.image && (
                               <video
-                                src={message.sharedPost.video.startsWith('http') ? message.sharedPost.video : message.sharedPost.video}
+                                src={getImageUrl(message.sharedPost.video) || message.sharedPost.video}
                                 className="mt-2 w-full max-h-32 object-cover rounded-lg"
                                 muted
                                 preload="metadata"
@@ -252,41 +253,43 @@ export default function ChatPanel({ communityId, receiverId, receiver: receiverP
                       )}
                       {message.image && (
                         <img
-                          src={message.image.startsWith('http') ? message.image : message.image}
+                          src={getImageUrl(message.image) || message.image}
                           alt="Shared"
                           className="mt-1 rounded-lg max-w-full max-h-64 object-cover cursor-pointer"
-                          onClick={() => openFile(message.image)}
+                          onClick={() => openFile(getImageUrl(message.image) || message.image)}
                         />
                       )}
                       {message.video && (
                         <video
-                          src={message.video.startsWith('http') ? message.video : message.video}
+                          src={getImageUrl(message.video) || message.video}
                           controls
                           className="mt-1 rounded-lg max-w-full max-h-64"
                         />
                       )}
                       {message.files?.length > 0 && (
                         <div className="mt-1 space-y-1">
-                          {message.files.map((file, idx) => (
-                            <div key={idx}>
-                              {file.fileType === 'image' && (
-                                <img
-                                  src={file.url.startsWith('http') ? file.url : file.url}
-                                  alt={file.originalName}
-                                  className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer"
-                                  onClick={() => openFile(file.url)}
-                                />
-                              )}
-                              {file.fileType === 'video' && (
-                                <video src={file.url.startsWith('http') ? file.url : file.url} controls className="rounded-lg max-w-full max-h-64" />
-                              )}
-                              {(file.fileType === 'document' || file.fileType === 'other') && (
-                                <a
-                                  href={file.url.startsWith('http') ? file.url : file.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-2 p-2 bg-black/5 dark:bg-white/10 rounded-lg hover:bg-black/10"
-                                >
+                          {message.files.map((file, idx) => {
+                            const fileUrl = getImageUrl(file.url) || file.url
+                            return (
+                              <div key={idx}>
+                                {file.fileType === 'image' && (
+                                  <img
+                                    src={fileUrl}
+                                    alt={file.originalName}
+                                    className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer"
+                                    onClick={() => openFile(fileUrl)}
+                                  />
+                                )}
+                                {file.fileType === 'video' && (
+                                  <video src={fileUrl} controls className="rounded-lg max-w-full max-h-64" />
+                                )}
+                                {(file.fileType === 'document' || file.fileType === 'other') && (
+                                  <a
+                                    href={fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 p-2 bg-black/5 dark:bg-white/10 rounded-lg hover:bg-black/10"
+                                  >
                                   <FiPaperclip className="shrink-0" />
                                   <span className="text-sm truncate">{file.originalName}</span>
                                 </a>

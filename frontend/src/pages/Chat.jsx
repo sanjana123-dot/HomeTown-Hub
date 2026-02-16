@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import { formatDistanceToNow } from 'date-fns'
+import { getImageUrl } from '../utils/imageUrl'
 
 const Chat = () => {
   const { communityId, receiverId } = useParams()
@@ -263,38 +264,41 @@ const Chat = () => {
                           )}
                           {message.files && message.files.length > 0 && (
                             <div className="mt-2 space-y-2">
-                              {message.files.map((file, index) => (
-                                <div key={index}>
-                                  {file.fileType === 'image' && (
-                                    <img
-                                      src={file.url.startsWith('http') ? file.url : file.url}
-                                      alt={file.originalName}
-                                      className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer"
-                                      onClick={() => window.open(file.url.startsWith('http') ? file.url : file.url, '_blank')}
-                                    />
-                                  )}
-                                  {file.fileType === 'video' && (
-                                    <video
-                                      src={file.url.startsWith('http') ? file.url : file.url}
-                                      controls
-                                      className="rounded-lg max-w-full max-h-64"
-                                    >
-                                      Your browser does not support the video tag.
-                                    </video>
-                                  )}
-                                  {(file.fileType === 'document' || file.fileType === 'other') && (
-                                    <a
-                                      href={file.url.startsWith('http') ? file.url : file.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center space-x-2 p-2 bg-white dark:bg-gray-800 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
-                                    >
-                                      <FiPaperclip />
-                                      <span className="text-sm">{file.originalName}</span>
-                                    </a>
-                                  )}
-                                </div>
-                              ))}
+                              {message.files.map((file, index) => {
+                                const fileUrl = getImageUrl(file.url) || file.url
+                                return (
+                                  <div key={index}>
+                                    {file.fileType === 'image' && (
+                                      <img
+                                        src={fileUrl}
+                                        alt={file.originalName}
+                                        className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer"
+                                        onClick={() => window.open(fileUrl, '_blank')}
+                                      />
+                                    )}
+                                    {file.fileType === 'video' && (
+                                      <video
+                                        src={fileUrl}
+                                        controls
+                                        className="rounded-lg max-w-full max-h-64"
+                                      >
+                                        Your browser does not support the video tag.
+                                      </video>
+                                    )}
+                                    {(file.fileType === 'document' || file.fileType === 'other') && (
+                                      <a
+                                        href={fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center space-x-2 p-2 bg-white dark:bg-gray-800 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                                      >
+                                        <FiPaperclip />
+                                        <span className="text-sm">{file.originalName}</span>
+                                      </a>
+                                    )}
+                                  </div>
+                                )
+                              })}
                             </div>
                           )}
                           <p className="text-xs mt-2 opacity-75">

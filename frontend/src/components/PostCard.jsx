@@ -13,6 +13,7 @@ import CommentSection from './CommentSection'
 import ConfirmDialog from './ConfirmDialog'
 import ShareToChatModal from './ShareToChatModal'
 import api from '../services/api'
+import { getImageUrl } from '../utils/imageUrl'
 
 const PostCard = ({ post, onUpdate, initialOpenComments = false }) => {
   const { user } = useAuth()
@@ -123,11 +124,11 @@ const PostCard = ({ post, onUpdate, initialOpenComments = false }) => {
           {post.image && !(post.files?.length > 0 && post.files[0].fileType === 'image') && (
             <div className="mt-3">
               <img
-                src={post.image.startsWith('http') ? post.image : post.image}
+                src={getImageUrl(post.image) || post.image}
                 alt="Post"
                 className="rounded-lg w-full max-h-96 object-cover cursor-pointer"
                 onClick={() => {
-                  const url = post.image.startsWith('http') ? post.image : post.image
+                  const url = getImageUrl(post.image) || post.image
                   window.open(url, '_blank')
                 }}
               />
@@ -138,7 +139,7 @@ const PostCard = ({ post, onUpdate, initialOpenComments = false }) => {
           {post.video && !(post.files?.length > 0 && post.files[0].fileType === 'video') && (
             <div className="mt-3">
               <video
-                src={post.video.startsWith('http') ? post.video : post.video}
+                src={getImageUrl(post.video) || post.video}
                 controls
                 className="rounded-lg w-full max-h-96"
               >
@@ -151,7 +152,7 @@ const PostCard = ({ post, onUpdate, initialOpenComments = false }) => {
           {post.files && post.files.length > 0 && (
             <div className="mt-3 space-y-3">
               {post.files.map((file, index) => {
-                const fileUrl = file.url.startsWith('http') ? file.url : file.url
+                const fileUrl = getImageUrl(file.url) || file.url
                 return (
                   <div key={index} className="space-y-2">
                     {file.fileType === 'image' && (
