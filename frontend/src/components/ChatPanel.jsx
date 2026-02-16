@@ -290,12 +290,13 @@ export default function ChatPanel({ communityId, receiverId, receiver: receiverP
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-2 p-2 bg-black/5 dark:bg-white/10 rounded-lg hover:bg-black/10"
                                   >
-                                  <FiPaperclip className="shrink-0" />
-                                  <span className="text-sm truncate">{file.originalName}</span>
-                                </a>
-                              )}
-                            </div>
-                          ))}
+                                    <FiPaperclip className="shrink-0" />
+                                    <span className="text-sm truncate">{file.originalName}</span>
+                                  </a>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
                       )}
                       <p className={`text-[10px] mt-1 ${isOwn ? 'text-gray-600 dark:text-gray-300 text-right' : 'text-gray-500 dark:text-gray-400'}`}>
